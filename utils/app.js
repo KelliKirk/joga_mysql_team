@@ -1,7 +1,6 @@
 const express = require('express')
 const path = require('path')
 const hbs = require('express-handlebars')
-const bodyParser = require('body-parser')
 
 const app = express()
 
@@ -13,8 +12,8 @@ app.engine('hbs', hbs.engine ({
     layoutsDir: path.join(__dirname + '/../views/layouts/')
 } ))
 
-
+app.use(express.json)
+app.use(express.urlencoded({extended: true} ))
 app.use(express.static('public'))
-app.use(bodyParser.urlencoded({extended: true} ))
 
 module.exports = app
