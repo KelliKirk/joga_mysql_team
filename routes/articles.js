@@ -3,7 +3,7 @@ const router = express.Router()
 const articleController = require('../controllers/articles')
 
 router.get('/', articleController.getAllArticles)
-router.get('/article/:slug', articleController.getArticleBySlug)
-router.post('/article/:slug/comment', articleController.addComment)
+router.get('/articles/:slug', articleController.getArticleBySlug)
+router.post('/articles/:slug/comment', articleController.addComment)
 
 module.exports = router

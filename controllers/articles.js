@@ -10,22 +10,49 @@ const getAllArticles = (req, res) => {
 } 
 
 const getArticleBySlug = (req, res) => {
-    const sql = `SELECT * FROM article WHERE slug="${req.params.slug}"`
-    db.query(sql, (error, result) => {
-        const article = result[0]
-        const author_id = result[0].author_id
+    console.log('Requested slug:', req.params.slug) 
+    const sql = `SELECT * FROM article WHERE slug=?`
+    db.query(sql, [req.params.slug], (error, result) => {
+        if (error) {
+            console.error('Database error:', error) 
+            res.redirect('/')
+            return
+        }
+        if (!result[0]) {
+            console.log('No article found with slug:', req.params.slug) 
+            res.redirect('/')
+            return
+        }
         
+        const article = result[0]
+        article.slug = result[0].slug
+        const author_id = article.author_id
+
         // Get author details
-        const authorSql = `SELECT * FROM author WHERE id="${author_id}"`
-        db.query(authorSql, (error, authorResult) => {
+        const authorSql = `SELECT * FROM author WHERE id=?`
+        db.query(authorSql, [author_id], (error, authorResult) => {
+            if (error) {
+                console.error('Author query error:', error) 
+                res.redirect('/')
+                return
+            }
+            if (!authorResult[0]) {
+                console.log('No author found for id:', author_id) 
+                res.redirect('/')
+                return
+            }
             const author = authorResult[0]
-            article['author_name'] = author.name
+            article.author_name = author.name
             
             // Get comments for this article
-            const commentsSql = `SELECT * FROM comments WHERE article_id=${article.id} ORDER BY created_at DESC`
-            db.query(commentsSql, (error, commentsResult) => {
+            const commentsSql = `SELECT * FROM comments WHERE article_id=? ORDER BY created_at DESC`
+            db.query(commentsSql, [article.id], (error, commentsResult) => {
+                if (error) {
+                    console.error('Comments query error:', error) 
+                    commentsResult = []
+                }
                 res.render('article', {
-                    article: article,
+                    article: article,  
                     comments: commentsResult
                 })
             })
@@ -34,8 +61,8 @@ const getArticleBySlug = (req, res) => {
 }
 
 const addComment = (req, res) => {
-    const articleSql = `SELECT id FROM article WHERE slug="${req.params.slug}"`
-    db.query(articleSql, (error, result) => {
+    const articleSql = `SELECT id FROM article WHERE slug=?`
+    db.query(articleSql, [req.params.slug], (error, result) => {
         if (error || !result[0]) {
             res.redirect('/')
             return
@@ -43,15 +70,15 @@ const addComment = (req, res) => {
 
         const article_id = result[0].id
         const { author_name, content } = req.body
-        
-        const sql = `INSERT INTO comments (article_id, author_name, content) 
-                    VALUES (?, ?, ?)`
-        
+
+        const sql = `INSERT INTO comments (article_id, author_name, content) VALUES (?, ?, ?)`
         db.query(sql, [article_id, author_name, content], (error, result) => {
             if (error) {
                 console.error(error)
+                res.redirect('/')
+                return
             }
-            res.redirect(`/article/${req.params.slug}`)
+            res.redirect(`/articles/${req.params.slug}`)
         })
     })
 }
